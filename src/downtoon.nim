@@ -42,32 +42,54 @@ template downloadAllFramesTemplate(chck: untyped, srcname: untyped, host: untype
   if o.quiet:
     for i, element in elements:
       let src = element.attr(srcname) 
-      if src.startswith(chck): # If the source url is a valid panel url, add image
-        var img = client.getContent(src)
 
-        if not o.noCompression:
-          img = compressJpeg(img)
+
+      if src.startswith(chck): # If the source url is a valid panel url, add image
+        let imgResp = client.get(src)
+
+        if imgResp.status != "200 OK":
+          raise newException(ValueError, "Request to image responded with " & imgResp.status)
+
+        var img = imgResp.bodyStream.readAll()
+
+        if imgResp.headers["Content-Type"] == "image/jpeg":
+          if not o.noCompression:
+            img = compressJpeg(img)
+
+
 
         if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
-          writeFile(dir & "/" & $i & ".jpg", img)
+          let ext = src.split("/")[^1].split(".")[^1]
+          writeFile(dir & "/" & $i & "." & ext, img)
         if o.fileFormat in {dtRelease, dtDebug}:
-          images.add getDataUri(img, "image/jpeg")
+          images.add getDataUri(img, imgResp.headers["Content-Type"])
   else:
     for i, element in elements:
       let src = element.attr(srcname) 
-      if src.startswith(chck): # If the source url is a valid panel url, add image
-        var img = client.getContent(src)
-
-        if not o.noCompression:
-          img = compressJpeg(img)
-       
-        if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
-          writeFile(dir & "/" & $i & ".jpg", img)
-        if o.fileFormat in {dtRelease, dtDebug}:
-          images.add getDataUri(img, "image/jpeg")
 
       stdout.write("\rGathering: " & url & " [" & $(i + 1) & "/" & $elements.len & "]")
-      flushFile(stdout)
+
+
+      if src.startswith(chck): # If the source url is a valid panel url, add image
+        let imgResp = client.get(src)
+
+        if imgResp.status != "200 OK":
+          raise newException(ValueError, "Request to image responded with " & imgResp.status)
+
+        var img = imgResp.bodyStream.readAll()
+
+        if imgResp.headers["Content-Type"] == "image/jpeg":
+          if not o.noCompression:
+            img = compressJpeg(img)
+        else:
+          stdout.write("[NON JPEG & NO COMPRESSION]")
+        flushFile(stdout)
+       
+        if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
+          let ext = src.split("/")[^1].split(".")[^1]
+          writeFile(dir & "/" & $i & "." & ext, img)
+        if o.fileFormat in {dtRelease, dtDebug}:
+          images.add getDataUri(img, imgResp.headers["Content-Type"])
 
     stdout.write("\n")
 
@@ -257,7 +279,7 @@ proc downtoon(output="", quiet=false, noCompression=false, first=1, last: int, u
         asuraScans(uri, tmpdir, options) # Get the files
       
       else:
-        echo "Invalid formatting. Please use the URL of the first episode!" 
+        echo "Invalid formatting. Please use the URL of the episode 1 (not 0)!" 
         return
 
     of "reaper-scans.com":
@@ -325,7 +347,7 @@ proc downtoon(output="", quiet=false, noCompression=false, first=1, last: int, u
 when isMainModule:
   import cligen; dispatch downtoon, help={
     "quiet": "Whether to not provide console updates. Increases efficiency and speed.", 
-    "url": "The url to the webcomic. \nAsurascans: first chapter url", 
+    "url": "The url to the webcomic. \nAsurascans: episode 1 url, not epsiode 0", 
     "first": "The first chapter you want to download.",
     "last": "The last chapter you want to download. Downloads all inbetween first and last",
     "templateName": "HTML template name. \nbasic.nimja: Basic glue-together of the image frames (IOS safe). \nadvanced.nimja: Uses js and more advanced css to give a interactive and colorful display.",

@@ -1,10 +1,15 @@
 import std/re
 
-proc webtoonDownloadSingle(client: var HttpClient, url, dir: string, o: Options): string =
+proc webtoonDownloadSingle(client: var HttpClient, ourl, dir: string, o: Options): string =
     ## Download a single episode from reaper-scans.com
 
-    let resp = client.get(url) # Download episode
-
+    var resp = client.get(ourl) # Download episode
+    
+    if resp.status != "301 Moved Permanently": # Enforce redirect
+      raise newException(ValueError, "Request to page responded with " & resp.status)
+    let url = "https://m.webtoons.com" & resp.headers["Location"]
+  
+    resp = client.get(url)
     if resp.status != "200 OK":
       raise newException(ValueError, "Request to page responded with " & resp.status)
 
@@ -12,37 +17,54 @@ proc webtoonDownloadSingle(client: var HttpClient, url, dir: string, o: Options)
 
     let html = resp.bodyStream.readAll()  
 
-    let reg = re"https:\/\/mwebtoon-phinf\.pstatic\.net\/[0-9_]+\/.[^\/]+\/[0-9]+_.[^\.]+\.jpg"
-
+    let reg = re"https:\/\/mwebtoon-phinf\.pstatic\.net\/[0-9_]+\/.[^\/]+\/[0-9]+.[^\.]*\.jpg"
+    writeFile("idk.html", html)
     let srcs = html.findAll(reg)
 
     var images = newSeq[string](0)
 
     if o.quiet:
       for i, src in srcs:
-        var img = client.getContent(src)
+        let imgResp = client.get(src)
 
-        if not o.noCompression:
-          img = compressJpeg(img)
+        if imgResp.status != "200 OK":
+          raise newException(ValueError, "Request to image responded with " & imgResp.status)
+
+        var img = imgResp.bodyStream.readAll()
+
+        if imgResp.headers["Content-Type"] == "image/jpeg":
+          if not o.noCompression:
+            img = compressJpeg(img)
 
         if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
-          writeFile(dir & "/" & $i & ".jpg", img) 
+          let ext = src.split("/")[^1].split(".")[^1]
+          writeFile(dir & "/" & $i & "." & ext, img)
         if o.fileFormat in {dtRelease, dtDebug}:
-          images.add getDataUri(img, "image/jpeg")
+          images.add getDataUri(img, imgResp.headers["Content-Type"])
     else:
       for i, src in srcs:
-        var img = client.getContent(src)
-
-        if not o.noCompression:
-          img = compressJpeg(img)
-
-        if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
-          writeFile(dir & "/" & $i & ".jpg", img) 
-        if o.fileFormat in {dtRelease, dtDebug}:
-          images.add getDataUri(img, "image/jpeg")
 
         stdout.write("\rGathering: " & url & " [" & $(i + 1) & "/" & $srcs.len & "]")
+
+        let imgResp = client.get(src)
+
+        if imgResp.status != "200 OK":
+          raise newException(ValueError, "Request to image responded with " & imgResp.status)
+
+        var img = imgResp.bodyStream.readAll()
+
+        if imgResp.headers["Content-Type"] == "image/jpeg":
+          if not o.noCompression:
+            img = compressJpeg(img)
+        else:
+          stdout.write("[NON JPEG & NO COMPRESSION]")
         flushFile(stdout)
+
+        if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
+          let ext = src.split("/")[^1].split(".")[^1]
+          writeFile(dir & "/" & $i & "." & ext, img)
+        if o.fileFormat in {dtRelease, dtDebug}:
+          images.add getDataUri(img, imgResp.headers["Content-Type"])
 
       stdout.write("\n")
 
@@ -59,7 +81,7 @@ proc webToons(url: Uri, dir: string, o: Options) =
 
     let name = url.path.split("/")[^2]
 
-    let baseUrl = $combine(url, parseUri("episode-$-/viewer?" & url.query & "&episode_no=$"))
+    let baseUrl = $combine(url, parseUri("title/viewer?" & url.query & "&episode_no=$"))
     if not o.quiet:
       echo "Collecting: " & name
     var client = newHttpClient("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 0, 
