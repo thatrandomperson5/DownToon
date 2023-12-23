@@ -4,6 +4,8 @@ A webcomic downloading cli tool, allowing users to read their favorite comics of
 ## Installation
 ### Linux
 Install `install.sh` and run it. Follow furthur instructions.
+### Any other device
+Install nim and run `nimble install https://github.com/thatrandomperson5/DownToon.git@#main`
 
 ## Usage
 ```
