@@ -1,6 +1,10 @@
 # DownToon
 A webcomic downloading cli tool, allowing users to read their favorite comics offline!
 
+## Installation
+### Linux
+Install `install.sh` and run it. Follow furthur instructions.
+
 ## Usage
 ```
 Usage:
@@ -46,7 +50,7 @@ Options:
 
 ## TODO
 * [X] First Release
-* [ ] Install Script
+* [X] Install Script
 * [ ] Database logging / sizes
 * [ ] GUI & Desktop App
 * [ ] Support More Sites
