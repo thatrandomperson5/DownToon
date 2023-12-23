@@ -1,0 +1,1 @@
+nim c -d:release src/downtoon.nim

@@ -1,0 +1,157 @@
+<html>
+
+  <head>
+    <style>
+      img {
+        padding: 0;
+        margin: 0;
+        max-width: 800px;
+        min-width: 100px;
+      }
+
+      .img-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+      }
+
+      body {
+        padding: 5% 0;
+        background: #16151d;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #b8b8b8;
+        font-family: fira sans, sans-serif;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+
+      }
+
+      :root {
+        background: #16151d;
+      }
+
+      .text-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2%;
+      }
+
+      h1 {
+        font-size: 4em;
+        margin-bottom: 0;
+      }
+
+      .hsize {
+        margin-top: 0;
+        font-size: 2em;
+      }
+
+      .name-bar {
+        display: flex;
+        justify-content: space-between;
+        width: 50%;
+      }
+
+      .symbol {
+        font-weight: 1000;
+        color: #b8b8b8;
+        text-decoration: none;
+      }
+
+    </style>
+    <script defer>
+      let url = new URL(window.location.href);
+
+      if (!(url.protocol === "file:" && "downtoon/episode_" in url.pathname)) {
+        throw new Error('Improper or tampererd filepath/url!');
+      }
+      //let url = new URL("file:///⁨On%20My%20iPad/⁨Downloads/dragon-devouring-mage_jLcW995W_downtoon/episode_1.html");
+      let nameL = url.pathname.split("/").slice(-2)[0].split("_")[0].replaceAll("-", " ");
+      let name = nameL.split(" ").map((word) => {
+        return word[0].toUpperCase() + word.substring(1);
+      }).join(" ");
+      let number = parseInt(url.pathname.split("/").slice(-1)[0].split("_")[1].split(".")[0]);
+
+      let nameElements = Array.from(document.getElementsByClassName("name"));
+
+      nameElements.forEach((elm) => {
+        elm.textContent = name + " " + number;
+      });
+
+      let backElements = Array.from(document.getElementsByClassName("back"));
+      var nlessUrl = url.pathname.split("/").slice(0, -1);
+      nlessUrl.push("episode_" + (number - 1) + ".html")
+      console.log(nlessUrl.join("/"));
+
+      backElements.forEach((elm) => {
+        if (number - 1 > 0) {
+          elm.setAttribute("href", nlessUrl.join("/"));
+        }
+      });
+
+
+      let nextElements = Array.from(document.getElementsByClassName("next"));
+      nlessUrl.splice(-1, 1);
+      nlessUrl.push("episode_" + (number + 1) + ".html")
+      console.log(nlessUrl.join("/"));
+
+      nextElements.forEach((elm) => {
+
+        elm.setAttribute("href", nlessUrl.join("/"));
+
+      });
+
+    </script>
+  </head>
+
+  <body>
+    <div class="text-details">
+      <h1>
+        Downtoon: {% if src == "asura" %}AsuraScans{% elif src == "reaper" %}ReaperScans{% elif src == "webtoon" %}Webtoons{% endif %}
+      </h1><br>
+
+
+      <p class="hsize name-bar">
+        <a class="symbol back"><span>&#8592;</span></a>
+        <span class="name">Loading</span>
+        <a class="symbol next"><span>&#8594;</span></a>
+      </p>
+
+
+
+    </div>
+    <div class="img-container">
+
+      {% for img in images %}
+        <img width="800" src="{{img}}">
+      {% endfor %}
+
+    </div>
+    <div class="text-details">
+
+
+      <p class="hsize name-bar" style="margin-bottom: 0; margin-top: 1em;">
+        <a class="symbol back"><span>&#8592;</span></a>
+        <span class="name">Loading</span>
+        <a class="symbol next"><span>&#8594;</span></a>
+      </p>
+
+      <p style="text-align: center;">
+        DownToon by thatrandomperson5<br>
+        {% if src == "asura" %}
+          AsuraScans: <a href="https://asuratoon.com/">https://asuratoon.com/</a>
+        {% elif src == "webtoon" %}
+          Webtoons: <a href="https://www.webtoons.com/en/">https://www.webtoons.com/en/</a>
+        {% elif src == "reaper" %}
+          ReaperScans: <a href="https://reaper-scans.com/">https://reaper-scans.com/</a>
+        {% endif %}
+      </p>
+    </div>
+  </body>
+
+</html>
