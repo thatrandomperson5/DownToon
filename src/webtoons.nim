@@ -18,7 +18,7 @@ proc webtoonDownloadSingle(client: var HttpClient, ourl, dir: string, o: Options
     let html = resp.bodyStream.readAll()  
 
     let reg = re"https:\/\/mwebtoon-phinf\.pstatic\.net\/[0-9_]+\/.[^\/]+\/[0-9]+.[^\.]*\.jpg"
-    writeFile("idk.html", html)
+
     let srcs = html.findAll(reg)
 
     var images = newSeq[string](0)
