@@ -49,6 +49,7 @@ Options:
 | AsuraScans/Toons | ✅      | N/A                                         | Medium-Fast | Small (27 M)        | FreeImage, OpenSSL        |
 | ReaperScans      | ✅      | N/A                                         | Fast        | Small (22 M)        | FreeImage, OpenSSL        |
 | Webtoons         | 🔶      | Needs a special binary (`-d:enableWebtoons`), not sure if i should fully support.| Medium-Slow | Medium-Small (34 M) | FreeImage, OpenSSL, PCRE  |
+| Manhuaus | ✅ | N/A | Slow | N/A | FreeImage, OpenSSL |
 
 ## TODO
 * [X] First Release

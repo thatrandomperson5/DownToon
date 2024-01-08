@@ -41,8 +41,7 @@ template downloadAllFramesTemplate(chck: untyped, srcname: untyped, host: untype
 
   if o.quiet:
     for i, element in elements:
-      let src = element.attr(srcname) 
-
+      let src = element.attr(srcname).strip
 
       if src.startswith(chck): # If the source url is a valid panel url, add image
         let imgResp = client.get(src)
@@ -65,10 +64,9 @@ template downloadAllFramesTemplate(chck: untyped, srcname: untyped, host: untype
           images.add getDataUri(img, imgResp.headers["Content-Type"])
   else:
     for i, element in elements:
-      let src = element.attr(srcname) 
+      let src = element.attr(srcname).strip
 
       stdout.write("\rGathering: " & url & " [" & $(i + 1) & "/" & $elements.len & "]")
-
 
       if src.startswith(chck): # If the source url is a valid panel url, add image
         let imgResp = client.get(src)
@@ -229,7 +227,8 @@ proc manhuausDownloadSingle(client: HttpClient, url, dir: string, o: Options): s
 
   let html = resp.bodyStream.readAll()  
   let xml = parseHtml(html)
-  let elements = xml.querySelectorAll("div > img.wp-manga-chapter-img.lazyload") # Find all webcomic panels
+  let elements = xml.querySelectorAll("div > img.wp-manga-chapter-img") # Find all webcomic panels
+
 
   downloadAllFramesTemplate("https://cdn.manhuaus.org/", "data-src", "manhuaus")
 
