@@ -218,6 +218,33 @@ proc reaperScans(url: Uri, dir: string, o: Options) =
   loopThroughAllEpisodesTemplate(baseUrl & $i & "/", reaperDownloadSingle)
 
 
+proc manhuausDownloadSingle(client: HttpClient, url, dir: string, o: Options): string =
+
+
+  let resp = client.get(url) # Download episode
+
+
+  if resp.status != "200 OK":
+    raise newException(ValueError, "Request to page responded with " & resp.status)
+
+  let html = resp.bodyStream.readAll()  
+  let xml = parseHtml(html)
+  let elements = xml.querySelectorAll("div > img.wp-manga-chapter-img.lazyload") # Find all webcomic panels
+
+  downloadAllFramesTemplate("https://cdn.manhuaus.org/", "data-src", "manhuaus")
+
+
+proc manhuausOrg(url: Uri, dir: string, o: Options) =
+  ## Download from manhuaus.org from `uri` with options `o` to `dir`.
+ 
+  let name = url.path.split("/")[^2] # Extract name
+  let baseUrl = $url & "chapter-"
+  if not o.quiet:
+    echo "Collecting: " & name
+  let client = newHttpClient("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 0)
+  loopThroughAllEpisodesTemplate(baseUrl & $i & "/", manhuausDownloadSingle)
+
+
   
 
 proc asuraDownloadSingle(client: HttpClient, url, dir: string, o: Options): string =
@@ -244,7 +271,7 @@ proc asuraScans(url: Uri, dir: string, o: Options) =
   let name = url.path.split("-")[1..^2].join("-") # Find name
   if not o.quiet:
     echo "Collecting: " & name
-  let client = newHttpClient("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 0)
+  let client = newHttpClient("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 1) # Fix later
   loopThroughAllEpisodesTemplate(baseUrl & "-" & $i & "/", asuraDownloadSingle)
   
 
@@ -318,6 +345,22 @@ proc downtoon(output="", quiet=false, noCompression=false, first=1, last: int, u
           return
 
       else:
+        return
+
+    of "manhuaus.org":
+      if uri.path.startswith("/manga/"): # Ensure first episode url instead of title page.
+        let name = uri.path.split("/")[^2] # Extract name
+        tmpdir = createTempDir(name & "_", "_downtoon") # Create named dir
+
+        if options.compressionType == dtcTarball and output == "":
+          options.output = name & ".tar.gz"
+        elif options.compressionType == dtcZipfile and output == "":
+          options.output = name & ".zip"
+
+        manhuausOrg(uri, tmpdir, options) # Get the files
+
+      else:
+        echo "Invalid formatting. Please use the URL of the title page!" 
         return
 
     else:
