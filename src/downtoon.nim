@@ -51,7 +51,7 @@ template downloadAllFramesTemplate(chck: untyped, srcname: untyped, host: untype
 
         var img = imgResp.bodyStream.readAll()
 
-        if imgResp.headers["Content-Type"] == "image/jpeg":
+        if imgResp.headers["Content-Type"] in ["image/jpeg", "image/jpg"]:
           if not o.noCompression:
             img = compressJpeg(img)
 
@@ -76,11 +76,13 @@ template downloadAllFramesTemplate(chck: untyped, srcname: untyped, host: untype
 
         var img = imgResp.bodyStream.readAll()
 
-        if imgResp.headers["Content-Type"] == "image/jpeg":
+        if imgResp.headers["Content-Type"] in ["image/jpeg", "image/jpg"]:
           if not o.noCompression:
             img = compressJpeg(img)
+
+          stdout.write("                                 ")
         else:
-          stdout.write("[NON JPEG & NO COMPRESSION]")
+          stdout.write("[" & imgResp.headers["Content-Type"] & " & No Compression]")
         flushFile(stdout)
        
         if o.fileFormat in {dtRaw, dtDebug}: # Raw images for raw mode
